@@ -7,6 +7,13 @@ from api.constants import AUTH_PROVIDER, DEPLOYMENT_MODE, DOGRAH_DEPLOYMENT_ID
 from api.db import db_client
 from api.db.models import UserModel
 from api.enums import PostHogEvent
+from api.services.auth.oidc import (
+    OIDCConfigurationError,
+    OIDCKeysUnavailableError,
+    OIDCOrganizationError,
+    OIDCTokenError,
+    get_oidc_verifier,
+)
 from api.services.auth.stack_auth import stackauth
 from api.services.mps_billing import ensure_signup_grant
 from api.services.organization_bootstrap import ensure_organization_bootstrapped
@@ -42,6 +49,12 @@ async def get_user(
     # ------------------------------------------------------------------
     if AUTH_PROVIDER == "local":
         return await _handle_oss_auth(authorization)
+
+    # ------------------------------------------------------------------
+    # Check if we're using an OpenID Connect provider
+    # ------------------------------------------------------------------
+    if AUTH_PROVIDER == "oidc":
+        return await _handle_oidc_auth(authorization)
 
     # ------------------------------------------------------------------
     # 1. Validate and fetch the authenticated Stack user
@@ -324,6 +337,94 @@ async def _handle_oss_auth(authorization: str | None) -> UserModel:
         )
 
     return user
+
+
+async def _handle_oidc_auth(authorization: str | None) -> UserModel:
+    """
+    Handle authentication against an OpenID Connect provider.
+
+    The access token is verified locally (signature, issuer, audience, expiry).
+    Its subject maps to the user and its organization claim to the
+    organization, both created on first sight, like Stack users and teams.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header required")
+
+    try:
+        identity = await get_oidc_verifier().verify(authorization)
+    except OIDCOrganizationError as exc:
+        # A genuine token, but not one this API can scope to a tenant.
+        logger.warning(f"OIDC token without a single organization: {exc}")
+        raise HTTPException(
+            status_code=403,
+            detail="Token must carry exactly one organization",
+        )
+    except OIDCTokenError as exc:
+        logger.debug(f"OIDC token rejected: {exc}")
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    except (OIDCKeysUnavailableError, OIDCConfigurationError) as exc:
+        logger.error(f"OIDC signing keys unavailable: {exc}")
+        raise HTTPException(status_code=503, detail="Identity provider is unavailable")
+
+    try:
+        (
+            user_model,
+            user_was_created,
+        ) = await db_client.get_or_create_user_by_provider_id(identity.subject)
+        (
+            organization,
+            org_was_created,
+        ) = await db_client.get_or_create_organization_by_provider_id(
+            org_provider_id=identity.organization, user_id=user_model.id
+        )
+        if user_model.selected_organization_id != organization.id:
+            await db_client.add_user_to_organization(user_model.id, organization.id)
+            await db_client.update_user_selected_organization(
+                user_model.id, organization.id
+            )
+            user_model.selected_organization_id = organization.id
+    except Exception as exc:
+        logger.exception("Failed to map OIDC identity to user and organization")
+        raise HTTPException(
+            status_code=500, detail="Failed to map user to organization"
+        ) from exc
+
+    if org_was_created:
+        logger.info(
+            f"Created organization {organization.id} for OIDC organization "
+            f"{identity.organization!r}"
+        )
+
+    if identity.email and user_model.email != identity.email.lower():
+        try:
+            await db_client.update_user_email(user_model.id, identity.email)
+            user_model.email = identity.email.lower()
+        except Exception:
+            # Emails are unique: another account may already hold this address.
+            # That must not lock the user out, and must never merge accounts.
+            logger.warning(
+                f"Could not sync email for user {user_model.id} from OIDC provider"
+            )
+
+    if user_was_created:
+        capture_event(
+            distinct_id=identity.subject,
+            event=PostHogEvent.SIGNED_UP,
+            properties={
+                "auth_provider": "oidc",
+                "organization_provider_id": identity.organization,
+                "deployment_id": DOGRAH_DEPLOYMENT_ID,
+            },
+        )
+
+    # Outside the mapping above: a provisioning failure must not be reported
+    # as an authentication failure, and it is retried on later requests.
+    await ensure_organization_bootstrapped(
+        organization.id,
+        created_by=identity.subject,
+    )
+
+    return user_model
 
 
 async def _handle_api_key_auth(api_key: str) -> UserModel:

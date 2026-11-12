@@ -93,6 +93,10 @@ class HealthResponse(BaseModel):
     # be baked into the browser bundle at build time. Both are public values.
     stack_project_id: str | None = None
     stack_publishable_client_key: str | None = None
+    # Public OpenID Connect client config — only populated when
+    # auth_provider == "oidc". The UI reads these at runtime to start sign-in.
+    oidc_issuer: str | None = None
+    oidc_client_id: str | None = None
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -105,6 +109,8 @@ async def health() -> HealthResponse:
         ENABLE_COTURN,
         ENABLE_SIGNUP,
         FORCE_TURN_RELAY,
+        OIDC_CLIENT_ID,
+        OIDC_ISSUER,
         STACK_AUTH_PROJECT_ID,
         STACK_PUBLISHABLE_CLIENT_KEY,
     )
@@ -123,6 +129,7 @@ async def health() -> HealthResponse:
         else None
     )
     is_stack = AUTH_PROVIDER == "stack"
+    is_oidc = AUTH_PROVIDER == "oidc"
     return HealthResponse(
         status="ok",
         version=APP_VERSION,
@@ -137,6 +144,8 @@ async def health() -> HealthResponse:
         stack_publishable_client_key=(
             STACK_PUBLISHABLE_CLIENT_KEY if is_stack else None
         ),
+        oidc_issuer=OIDC_ISSUER if is_oidc else None,
+        oidc_client_id=OIDC_CLIENT_ID if is_oidc else None,
     )
 
 

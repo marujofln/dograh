@@ -3,6 +3,7 @@
 import sentry_sdk
 
 from api.constants import (
+    AUTH_PROVIDER,
     CORS_ALLOWED_ORIGINS,
     DEPLOYMENT_MODE,
     ENABLE_TELEMETRY,
@@ -138,6 +139,13 @@ async def handle_mps_unavailable_error(
         status_code=503,
         content={"detail": MPS_UNAVAILABLE_PUBLIC_MESSAGE},
     )
+
+
+# Fail at boot, not on every request, when OIDC is selected but misconfigured.
+if AUTH_PROVIDER == "oidc":
+    from api.services.auth.oidc import get_oidc_verifier
+
+    get_oidc_verifier()
 
 
 # Configure CORS.

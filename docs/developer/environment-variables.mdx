@@ -22,7 +22,7 @@ The relevant required variables for each mode are noted in the descriptions belo
 |---|---|---|
 | `ENVIRONMENT` | `local` | Runtime environment. Affects logging and behaviour. One of `local`, `production`, `test` |
 | `DEPLOYMENT_MODE` | `oss` | Deployment mode. Use `oss` for self-hosted |
-| `AUTH_PROVIDER` | `local` | Authentication provider. `local` (default) uses the built-in email/password flow. Set to `stack` to delegate to Stack Auth for social login — see [Authentication](/deployment/authentication) for the full setup |
+| `AUTH_PROVIDER` | `local` | Authentication provider. `local` (default) uses the built-in email/password flow. Set to `stack` to delegate to Stack Auth for social login — see [Authentication](/deployment/authentication) for the full setup. Set to `oidc` to accept access tokens from an OpenID Connect provider (backend-only for now) |
 
 ---
 
@@ -59,6 +59,25 @@ Set these when `AUTH_PROVIDER=stack` to delegate sign-in to [Stack Auth](https:/
 | `STACK_PUBLISHABLE_CLIENT_KEY` | `null` | **Required for `stack`.** Stack publishable client key (public) |
 | `STACK_SECRET_SERVER_KEY` | `null` | **Required for `stack`.** Stack secret server key — server-side only, also set on the `ui` service. Keep secret |
 | `STACK_AUTH_API_URL` | `null` | **Required for `stack`.** Stack REST API base URL (e.g. `https://api.stack-auth.com`) |
+
+## Authentication (OpenID Connect)
+
+Set these when `AUTH_PROVIDER=oidc` to authenticate against an OpenID Connect provider such as Keycloak. The API verifies access tokens locally (signature against the provider's JWKS, then issuer, audience and expiry); it does not call the provider on each request. A token's `sub` identifies the user and its organization claim identifies the organization; both are created on first sign-in.
+
+<Warning>
+`AUTH_PROVIDER=oidc` is currently backend-only: the API accepts OIDC access tokens, but the UI sign-in flow for it is not implemented yet.
+</Warning>
+
+| Variable | Default | Description |
+|---|---|---|
+| `OIDC_ISSUER` | `null` | **Required for `oidc`.** Issuer URL, exactly as it appears in the tokens' `iss` claim |
+| `OIDC_AUDIENCE` | `null` | **Required for `oidc`.** Audience that identifies this API in the tokens' `aud` claim. Do not use the UI's client id: ID tokens carry it as their audience and would be accepted as access tokens |
+| `OIDC_JWKS_URL` | discovery | URL of the provider's signing keys. Defaults to the `jwks_uri` of `<issuer>/.well-known/openid-configuration`. Set it when the API reaches the provider at a different address than the public issuer URL |
+| `OIDC_ORGANIZATION_CLAIM` | `organization` | Claim that holds the user's organization. A token must carry **exactly one** organization (a string, a one-item list, or a one-key object); tokens with none or several are rejected with `403` |
+| `OIDC_ALLOWED_ALGORITHMS` | `RS256,ES256` | Comma-separated signature algorithms to accept. Only asymmetric algorithms are allowed |
+| `OIDC_CLIENT_ID` | `null` | Public client id the UI signs in with; served to the browser via `/api/v1/health` |
+
+The organization claim is trusted as issued: configure the provider so that it, and not an upstream identity provider or the user, decides which organization a token carries. API keys (`X-API-Key`) keep working and are not tied to the provider session — archive a user's keys when you remove them from an organization.
 
 ---
 

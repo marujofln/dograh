@@ -79,6 +79,24 @@ ENABLE_SIGNUP = os.getenv("ENABLE_SIGNUP", "true").lower() == "true"
 # needs them baked into the bundle at build time.
 STACK_AUTH_PROJECT_ID = os.getenv("STACK_AUTH_PROJECT_ID")
 STACK_PUBLISHABLE_CLIENT_KEY = os.getenv("STACK_PUBLISHABLE_CLIENT_KEY")
+# OpenID Connect (AUTH_PROVIDER=oidc). The API verifies access tokens locally
+# against the issuer's signing keys. OIDC_AUDIENCE must name this API, not the
+# UI's client id, or the UI's ID tokens would be accepted as access tokens.
+OIDC_ISSUER = os.getenv("OIDC_ISSUER")
+OIDC_AUDIENCE = os.getenv("OIDC_AUDIENCE")
+# Where to fetch the signing keys. Defaults to the jwks_uri from the issuer's
+# discovery document; set it when the API reaches the provider at a different
+# address than the public issuer URL (e.g. inside a container network).
+OIDC_JWKS_URL = os.getenv("OIDC_JWKS_URL")
+# Claim holding the user's organization. A token must carry exactly one.
+OIDC_ORGANIZATION_CLAIM = os.getenv("OIDC_ORGANIZATION_CLAIM", "organization")
+OIDC_ALLOWED_ALGORITHMS = [
+    a.strip()
+    for a in os.getenv("OIDC_ALLOWED_ALGORITHMS", "RS256,ES256").split(",")
+    if a.strip()
+]
+# Public client id the UI signs in with; served to the browser via /api/v1/health.
+OIDC_CLIENT_ID = os.getenv("OIDC_CLIENT_ID")
 DOGRAH_MPS_SECRET_KEY = os.getenv("DOGRAH_MPS_SECRET_KEY", None)
 MPS_API_URL = os.getenv("MPS_API_URL", "https://services.dograh.com")
 DOGRAH_DEPLOYMENT_ID = os.getenv(
