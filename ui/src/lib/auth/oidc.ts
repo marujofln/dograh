@@ -14,6 +14,8 @@ import { OSS_TOKEN_COOKIE, OSS_USER_COOKIE, sessionCookieOptions } from './cooki
 export const OIDC_REFRESH_COOKIE = 'dograh_oidc_refresh';
 export const OIDC_ID_TOKEN_COOKIE = 'dograh_oidc_id_token';
 export const OIDC_FLOW_COOKIE = 'dograh_oidc_flow';
+// Remembers which upstream identity provider this browser signs in with.
+export const OIDC_IDP_COOKIE = 'dograh_oidc_idp';
 
 // How long a sign-in may take between leaving for the provider and coming back.
 const FLOW_MAX_AGE = 600;
@@ -182,6 +184,41 @@ export function publicOrigin(request: NextRequest): string {
   return `${proto}://${host}`;
 }
 
+const IDP_HINT_MAX_AGE = 60 * 60 * 24 * 365;
+const HINT_TOKEN = /^[A-Za-z0-9._-]{1,64}$/;
+// Parameters this flow sets itself; the hint may never stand in for one.
+const RESERVED_AUTHORIZATION_PARAMS = new Set([
+  'response_type',
+  'client_id',
+  'redirect_uri',
+  'scope',
+  'state',
+  'nonce',
+  'code_challenge',
+  'code_challenge_method',
+]);
+
+/**
+ * Name of the authorization parameter that tells the provider which upstream
+ * identity provider to use, from `OIDC_IDP_HINT_PARAM`. There is no standard
+ * one: Keycloak calls it `kc_idp_hint`. Unset means the feature is off.
+ */
+export function idpHintParam(): string | null {
+  const name = process.env.OIDC_IDP_HINT_PARAM?.trim();
+  return name && HINT_TOKEN.test(name) && !RESERVED_AUTHORIZATION_PARAMS.has(name)
+    ? name
+    : null;
+}
+
+/** An identity provider alias safe to put in a URL and a cookie, or null. */
+export function safeIdpHint(value: string | null | undefined): string | null {
+  return value && HINT_TOKEN.test(value) ? value : null;
+}
+
+export function idpCookieOptions(request: NextRequest, maxAge = IDP_HINT_MAX_AGE) {
+  return sessionCookieOptions(request, maxAge);
+}
+
 export function buildAuthorizationUrl(params: {
   config: OidcConfig;
   endpoints: OidcEndpoints;
@@ -189,6 +226,7 @@ export function buildAuthorizationUrl(params: {
   state: string;
   nonce: string;
   challenge: string;
+  idpHint?: { param: string; value: string } | null;
 }): string {
   const url = new URL(params.endpoints.authorizationEndpoint);
   url.searchParams.set('response_type', 'code');
@@ -199,6 +237,9 @@ export function buildAuthorizationUrl(params: {
   url.searchParams.set('nonce', params.nonce);
   url.searchParams.set('code_challenge', params.challenge);
   url.searchParams.set('code_challenge_method', 'S256');
+  if (params.idpHint) {
+    url.searchParams.set(params.idpHint.param, params.idpHint.value);
+  }
   return url.toString();
 }
 

@@ -11,10 +11,20 @@ import { LoginForm } from "./LoginForm";
 // would bake in the flag's build-environment value.
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ idp?: string }>;
+}) {
   // With an OpenID Connect provider there is no password to type here.
   if ((await getAuthProvider()) === "oidc") {
-    redirect(OIDC_LOGIN_PATH);
+    // /auth/login?idp=<alias> is the per-customer sign-in address.
+    const { idp } = await searchParams;
+    redirect(
+      typeof idp === "string"
+        ? `${OIDC_LOGIN_PATH}?idp=${encodeURIComponent(idp)}`
+        : OIDC_LOGIN_PATH,
+    );
   }
   const signupEnabled = await getSignupEnabled();
   return <LoginForm signupEnabled={signupEnabled} />;

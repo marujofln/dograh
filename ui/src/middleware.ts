@@ -10,6 +10,7 @@ import {
   isNavigation,
   loginUrl as oidcLoginUrl,
   OIDC_ERROR_PATH,
+  OIDC_LOGIN_PATH,
   OIDC_REFRESH_COOKIE,
   type OidcConfig,
   refreshTokens,
@@ -80,6 +81,17 @@ async function oidcMiddleware(request: NextRequest): Promise<NextResponse> {
   const { pathname, search } = request.nextUrl;
   if (isPublicPath(pathname, OIDC_PUBLIC_PATHS)) {
     return NextResponse.next();
+  }
+
+  // /auth/login?idp=<alias> is the per-customer sign-in address: hand it to
+  // the sign-in route as is, so the provider choice is not lost in `returnTo`.
+  if (pathname === '/auth/login' && isNavigation(request)) {
+    const login = new URL(OIDC_LOGIN_PATH, request.url);
+    const idp = request.nextUrl.searchParams.get('idp');
+    if (idp !== null) {
+      login.searchParams.set('idp', idp);
+    }
+    return NextResponse.redirect(login);
   }
 
   const accessToken = request.cookies.get(OSS_TOKEN_COOKIE)?.value;

@@ -12,7 +12,12 @@ vi.mock('@/lib/auth/config', () => ({
   })),
 }));
 
-import { clearOidcEndpointCache, OIDC_FLOW_COOKIE, pkceChallenge } from '@/lib/auth/oidc';
+import {
+  clearOidcEndpointCache,
+  OIDC_FLOW_COOKIE,
+  OIDC_IDP_COOKIE,
+  pkceChallenge,
+} from '@/lib/auth/oidc';
 
 import { GET } from './route';
 
@@ -41,7 +46,11 @@ describe('GET /api/auth/oidc/login', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
+
+  const hintIn = (response: Response, param = 'kc_idp_hint') =>
+    new URL(response.headers.get('location')!).searchParams.get(param);
 
   it('sends a navigation to the provider and remembers the attempt under its state', async () => {
     const response = await GET(login('?returnTo=/workflow/7', { 'sec-fetch-mode': 'navigate' }));
@@ -80,6 +89,85 @@ describe('GET /api/auth/oidc/login', () => {
       expect(response.headers.get('set-cookie')).toBeNull();
     },
   );
+
+  describe('identity provider hint', () => {
+    beforeEach(() => {
+      vi.stubEnv('OIDC_IDP_HINT_PARAM', 'kc_idp_hint');
+    });
+
+    it('passes ?idp= to the provider and remembers it', async () => {
+      const response = await GET(login('?idp=acme-sso&returnTo=/reports'));
+
+      expect(hintIn(response)).toBe('acme-sso');
+      const cookie = response.cookies.get(OIDC_IDP_COOKIE)!;
+      expect(cookie.value).toBe('acme-sso');
+      expect(cookie.httpOnly).toBe(true);
+      expect(cookie.maxAge).toBeGreaterThan(60 * 60 * 24 * 30);
+    });
+
+    it('goes back to the remembered provider when none is asked for', async () => {
+      const response = await GET(login('', { cookie: `${OIDC_IDP_COOKIE}=acme-sso` }));
+
+      expect(hintIn(response)).toBe('acme-sso');
+      expect(response.cookies.get(OIDC_IDP_COOKIE)).toBeUndefined();
+    });
+
+    it('lets the address override what was remembered', async () => {
+      const response = await GET(
+        login('?idp=globex-sso', { cookie: `${OIDC_IDP_COOKIE}=acme-sso` }),
+      );
+
+      expect(hintIn(response)).toBe('globex-sso');
+      expect(response.cookies.get(OIDC_IDP_COOKIE)?.value).toBe('globex-sso');
+    });
+
+    it('forgets the provider on an empty ?idp=', async () => {
+      const response = await GET(login('?idp=', { cookie: `${OIDC_IDP_COOKIE}=acme-sso` }));
+
+      expect(hintIn(response)).toBeNull();
+      expect(response.cookies.get(OIDC_IDP_COOKIE)?.value).toBe('');
+    });
+
+    it.each(['a b', 'a&state=x', '../x', 'a'.repeat(65), 'ação'])(
+      'ignores the malformed alias %j',
+      async (alias) => {
+        const response = await GET(login(`?idp=${encodeURIComponent(alias)}`));
+
+        expect(hintIn(response)).toBeNull();
+        // The flow's own parameters are untouched.
+        const target = new URL(response.headers.get('location')!);
+        expect(target.searchParams.getAll('state')).toHaveLength(1);
+        expect(response.cookies.get(OIDC_IDP_COOKIE)?.value || '').toBe('');
+      },
+    );
+
+    it('ignores a tampered cookie', async () => {
+      const response = await GET(login('', { cookie: `${OIDC_IDP_COOKIE}=a%26scope%3Dx` }));
+
+      expect(hintIn(response)).toBeNull();
+    });
+
+    it.each(['state', 'redirect_uri', 'scope', 'bad name', ''])(
+      'is off when OIDC_IDP_HINT_PARAM is %j',
+      async (name) => {
+        vi.stubEnv('OIDC_IDP_HINT_PARAM', name);
+
+        const response = await GET(login('?idp=acme-sso'));
+
+        const target = new URL(response.headers.get('location')!);
+        expect([...target.searchParams.values()]).not.toContain('acme-sso');
+        expect(target.searchParams.get('scope')).toBe('openid organization');
+        expect(response.cookies.get(OIDC_IDP_COOKIE)).toBeUndefined();
+      },
+    );
+  });
+
+  it('ignores ?idp= when no hint parameter is configured', async () => {
+    const response = await GET(login('?idp=acme-sso'));
+
+    expect(response.headers.get('location')).not.toContain('acme-sso');
+    expect(response.cookies.get(OIDC_IDP_COOKIE)).toBeUndefined();
+  });
 
   it('never returns to another site', async () => {
     const response = await GET(login('?returnTo=https://evil.example.test/'));

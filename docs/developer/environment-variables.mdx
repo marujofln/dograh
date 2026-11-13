@@ -77,6 +77,7 @@ The UI signs users in with the authorization code flow and PKCE, run by its own 
 | `OIDC_SCOPES` | `openid profile email` | Scopes the UI requests at sign-in. They must make the provider emit the organization claim (for Keycloak, add `organization`) |
 | `OIDC_INTERNAL_ISSUER_URL` | `null` | **`ui` service.** Address the UI server uses to fetch the provider's discovery document and exchange codes, when it differs from the public issuer URL. The provider must still report the public issuer and return a token endpoint reachable from the UI server (for Keycloak, `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`) |
 | `OIDC_CLIENT_SECRET` | `null` | **`ui` service.** Client secret, only if the provider's client is confidential. Public clients rely on PKCE and leave this unset |
+| `OIDC_IDP_HINT_PARAM` | `null` | **`ui` service.** Name of the provider's authorization parameter that selects an upstream identity provider (for Keycloak, `kc_idp_hint`). When set, `/auth/login?idp=<alias>` sends the user straight to that identity provider and remembers the choice in a cookie; `?idp=` forgets it. Unset disables the feature |
 
 A user who belongs to several organizations works in one at a time: switching means signing out and in again and choosing the other organization at the provider. A sign-in that yields no single organization ends on an error page rather than looping back to the provider. Refresh-token rotation with reuse detection is not supported: the middleware and the browser may renew concurrently with the same refresh token.
 
