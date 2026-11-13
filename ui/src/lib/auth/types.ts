@@ -16,8 +16,16 @@ export interface LocalUser extends BaseUser {
   provider_id?: string;
 }
 
+// OpenID Connect user type: same shape as a local user, signed in elsewhere
+export interface OidcUser extends BaseUser {
+  provider: 'oidc';
+  organizationId?: string;
+  displayName?: string;
+  provider_id?: string;
+}
+
 // Union type for all user types
-export type AuthUser = CurrentUser | LocalUser;
+export type AuthUser = CurrentUser | LocalUser | OidcUser;
 
 
 export interface AuthToken {
@@ -30,7 +38,7 @@ export interface TeamPermission {
   id: string;
 }
 
-export type AuthProvider = 'stack' | 'local';
+export type AuthProvider = 'stack' | 'local' | 'oidc';
 
 export interface AuthConfig {
   provider: AuthProvider;

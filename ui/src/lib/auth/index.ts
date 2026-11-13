@@ -5,6 +5,7 @@ export type {
   AuthUser,
   BaseUser,
   LocalUser,
+  OidcUser,
   TeamPermission
 } from './types';
 

@@ -2,6 +2,8 @@ import "server-only";
 
 import { getServerBackendUrl } from "@/lib/apiClient";
 
+import type { OidcConfig } from "./oidc";
+
 export interface StackConfig {
   projectId: string;
   publishableClientKey: string;
@@ -10,6 +12,7 @@ export interface StackConfig {
 interface ResolvedAuthConfig {
   authProvider: string;
   stackConfig: StackConfig | null;
+  oidcConfig: OidcConfig | null;
   signupEnabled: boolean;
 }
 
@@ -49,7 +52,15 @@ async function resolveAuthConfig(): Promise<ResolvedAuthConfig> {
       // Default to signup-enabled when the backend omits the field (older api
       // versions before the flag existed) — matches the backend's own default.
       const signupEnabled = data.signup_enabled !== false;
-      cachedConfig = { authProvider, stackConfig, signupEnabled };
+      const oidcConfig =
+        authProvider === "oidc" && data.oidc_issuer && data.oidc_client_id
+          ? {
+              issuer: data.oidc_issuer as string,
+              clientId: data.oidc_client_id as string,
+              scopes: (data.oidc_scopes as string) || "openid profile email",
+            }
+          : null;
+      cachedConfig = { authProvider, stackConfig, oidcConfig, signupEnabled };
       return cachedConfig;
     }
   } catch {
@@ -60,7 +71,12 @@ async function resolveAuthConfig(): Promise<ResolvedAuthConfig> {
   // do NOT cache it: caching here would pin the entire UI to local auth until a
   // container restart if the first resolution loses the startup race with the api
   // service. Leaving it uncached means the next request retries and self-heals.
-  return { authProvider: "local", stackConfig: null, signupEnabled: true };
+  return {
+    authProvider: "local",
+    stackConfig: null,
+    oidcConfig: null,
+    signupEnabled: true,
+  };
 }
 
 /**
@@ -76,6 +92,14 @@ export async function getAuthProvider(): Promise<string> {
  */
 export async function getStackConfig(): Promise<StackConfig | null> {
   return (await resolveAuthConfig()).stackConfig;
+}
+
+/**
+ * Returns the public OpenID Connect client config when the active provider is
+ * `oidc`, otherwise null.
+ */
+export async function getOidcConfig(): Promise<OidcConfig | null> {
+  return (await resolveAuthConfig()).oidcConfig;
 }
 
 /**

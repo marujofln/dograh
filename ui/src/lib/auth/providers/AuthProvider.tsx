@@ -7,7 +7,7 @@ import logger from '@/lib/logger';
 
 import type { AuthUser } from '../types';
 
-// Shared context type for both Stack and Local providers
+// Shared context type for the Stack, OIDC and Local providers
 export interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
@@ -33,6 +33,12 @@ const StackProviderWrapper = lazy(() =>
 const LocalProviderWrapper = lazy(() =>
   import('./LocalProviderWrapper').then(module => ({
     default: module.LocalProviderWrapper
+  }))
+);
+
+const OidcProviderWrapper = lazy(() =>
+  import('./OidcProviderWrapper').then(module => ({
+    default: module.OidcProviderWrapper
   }))
 );
 
@@ -95,6 +101,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         >
           {children}
         </StackProviderWrapper>
+      </Suspense>
+    );
+  }
+
+  if (config.provider === 'oidc') {
+    return (
+      <Suspense fallback={LoadingFallback}>
+        <OidcProviderWrapper>
+          {children}
+        </OidcProviderWrapper>
       </Suspense>
     );
   }

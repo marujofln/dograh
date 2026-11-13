@@ -20,7 +20,8 @@ export default function SignInClient() {
   const router = useRouter();
 
   useEffect(() => {
-    if (provider === 'local') {
+    // /auth/login hands off to the identity provider in OIDC mode.
+    if (provider === 'local' || provider === 'oidc') {
       router.replace('/auth/login');
     }
   }, [provider, router]);

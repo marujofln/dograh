@@ -22,7 +22,7 @@ The relevant required variables for each mode are noted in the descriptions belo
 |---|---|---|
 | `ENVIRONMENT` | `local` | Runtime environment. Affects logging and behaviour. One of `local`, `production`, `test` |
 | `DEPLOYMENT_MODE` | `oss` | Deployment mode. Use `oss` for self-hosted |
-| `AUTH_PROVIDER` | `local` | Authentication provider. `local` (default) uses the built-in email/password flow. Set to `stack` to delegate to Stack Auth for social login — see [Authentication](/deployment/authentication) for the full setup. Set to `oidc` to accept access tokens from an OpenID Connect provider (backend-only for now) |
+| `AUTH_PROVIDER` | `local` | Authentication provider. `local` (default) uses the built-in email/password flow. Set to `stack` to delegate to Stack Auth for social login — see [Authentication](/deployment/authentication) for the full setup. Set to `oidc` to sign in through an OpenID Connect provider such as Keycloak |
 
 ---
 
@@ -64,9 +64,7 @@ Set these when `AUTH_PROVIDER=stack` to delegate sign-in to [Stack Auth](https:/
 
 Set these when `AUTH_PROVIDER=oidc` to authenticate against an OpenID Connect provider such as Keycloak. The API verifies access tokens locally (signature against the provider's JWKS, then issuer, audience and expiry); it does not call the provider on each request. A token's `sub` identifies the user and its organization claim identifies the organization; both are created on first sign-in.
 
-<Warning>
-`AUTH_PROVIDER=oidc` is currently backend-only: the API accepts OIDC access tokens, but the UI sign-in flow for it is not implemented yet.
-</Warning>
+The UI signs users in with the authorization code flow and PKCE, run by its own server: tokens are kept in `httpOnly` cookies and renewed with the refresh token. It reads the issuer, client id and scopes from the backend at runtime via `/api/v1/health`, so only the variables marked `ui` below are set on the `ui` service. Register `<public UI URL>/api/auth/oidc/callback` as a redirect URI and `<public UI URL>/` as a post-logout redirect URI on the provider's client.
 
 | Variable | Default | Description |
 |---|---|---|
@@ -76,6 +74,11 @@ Set these when `AUTH_PROVIDER=oidc` to authenticate against an OpenID Connect pr
 | `OIDC_ORGANIZATION_CLAIM` | `organization` | Claim that holds the user's organization. A token must carry **exactly one** organization (a string, a one-item list, or a one-key object); tokens with none or several are rejected with `403` |
 | `OIDC_ALLOWED_ALGORITHMS` | `RS256,ES256` | Comma-separated signature algorithms to accept. Only asymmetric algorithms are allowed |
 | `OIDC_CLIENT_ID` | `null` | Public client id the UI signs in with; served to the browser via `/api/v1/health` |
+| `OIDC_SCOPES` | `openid profile email` | Scopes the UI requests at sign-in. They must make the provider emit the organization claim (for Keycloak, add `organization`) |
+| `OIDC_INTERNAL_ISSUER_URL` | `null` | **`ui` service.** Address the UI server uses to fetch the provider's discovery document and exchange codes, when it differs from the public issuer URL. The provider must still report the public issuer and return a token endpoint reachable from the UI server (for Keycloak, `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`) |
+| `OIDC_CLIENT_SECRET` | `null` | **`ui` service.** Client secret, only if the provider's client is confidential. Public clients rely on PKCE and leave this unset |
+
+A user who belongs to several organizations works in one at a time: switching means signing out and in again and choosing the other organization at the provider. A sign-in that yields no single organization ends on an error page rather than looping back to the provider. Refresh-token rotation with reuse detection is not supported: the middleware and the browser may renew concurrently with the same refresh token.
 
 The organization claim is trusted as issued: configure the provider so that it, and not an upstream identity provider or the user, decides which organization a token carries. API keys (`X-API-Key`) keep working and are not tied to the provider session — archive a user's keys when you remove them from an organization.
 

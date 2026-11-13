@@ -97,6 +97,7 @@ class HealthResponse(BaseModel):
     # auth_provider == "oidc". The UI reads these at runtime to start sign-in.
     oidc_issuer: str | None = None
     oidc_client_id: str | None = None
+    oidc_scopes: str | None = None
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -111,6 +112,7 @@ async def health() -> HealthResponse:
         FORCE_TURN_RELAY,
         OIDC_CLIENT_ID,
         OIDC_ISSUER,
+        OIDC_SCOPES,
         STACK_AUTH_PROJECT_ID,
         STACK_PUBLISHABLE_CLIENT_KEY,
     )
@@ -146,6 +148,7 @@ async def health() -> HealthResponse:
         ),
         oidc_issuer=OIDC_ISSUER if is_oidc else None,
         oidc_client_id=OIDC_CLIENT_ID if is_oidc else None,
+        oidc_scopes=OIDC_SCOPES if is_oidc else None,
     )
 
 

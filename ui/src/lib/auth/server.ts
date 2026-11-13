@@ -64,8 +64,8 @@ export async function getServerUser(): Promise<CurrentUser | LocalUser | null> {
         return null;
       }
     }
-  } else if (authProvider === 'local') {
-    // For OSS mode, get user from cookies (created by middleware)
+  } else if (authProvider === 'local' || authProvider === 'oidc') {
+    // For OSS and OIDC modes the session lives in the same cookies
     const user = await getOSSUser();
     return user;
   }
@@ -141,8 +141,9 @@ export async function getServerAccessToken(): Promise<string | null> {
       const auth = await user.getAuthJson();
       return auth?.accessToken ?? null;
     }
-  } else if (authProvider === 'local') {
-    // Get token from cookies (created by middleware)
+  } else if (authProvider === 'local' || authProvider === 'oidc') {
+    // Get token from cookies. In OIDC mode the middleware has already renewed
+    // it for this request if it was about to expire.
     return await getOSSToken();
   }
 

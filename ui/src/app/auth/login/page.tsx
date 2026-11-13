@@ -1,4 +1,7 @@
-import { getSignupEnabled } from "@/lib/auth/config";
+import { redirect } from "next/navigation";
+
+import { getAuthProvider, getSignupEnabled } from "@/lib/auth/config";
+import { OIDC_LOGIN_PATH } from "@/lib/auth/oidc";
 
 import { LoginForm } from "./LoginForm";
 
@@ -9,6 +12,10 @@ import { LoginForm } from "./LoginForm";
 export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
+  // With an OpenID Connect provider there is no password to type here.
+  if ((await getAuthProvider()) === "oidc") {
+    redirect(OIDC_LOGIN_PATH);
+  }
   const signupEnabled = await getSignupEnabled();
   return <LoginForm signupEnabled={signupEnabled} />;
 }

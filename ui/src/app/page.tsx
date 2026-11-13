@@ -13,8 +13,8 @@ export default async function Home() {
   const authProvider = await getServerAuthProvider();
   logger.debug('[HomePage] Auth provider:', authProvider);
 
-  // For local/OSS provider, check if user has workflows
-  if (authProvider === 'local') {
+  // For local/OSS and OIDC providers, check if user has workflows
+  if (authProvider === 'local' || authProvider === 'oidc') {
     logger.debug('[HomePage] Local provider detected, checking for workflows');
 
     try {

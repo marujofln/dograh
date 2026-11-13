@@ -97,6 +97,10 @@ OIDC_ALLOWED_ALGORITHMS = [
 ]
 # Public client id the UI signs in with; served to the browser via /api/v1/health.
 OIDC_CLIENT_ID = os.getenv("OIDC_CLIENT_ID")
+# Scopes the UI requests at sign-in; served to the browser via /api/v1/health.
+# They must make the provider emit the organization claim (for Keycloak, add
+# `organization`).
+OIDC_SCOPES = os.getenv("OIDC_SCOPES", "openid profile email")
 DOGRAH_MPS_SECRET_KEY = os.getenv("DOGRAH_MPS_SECRET_KEY", None)
 MPS_API_URL = os.getenv("MPS_API_URL", "https://services.dograh.com")
 DOGRAH_DEPLOYMENT_ID = os.getenv(
