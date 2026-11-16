@@ -86,7 +86,7 @@
      from the brand logo PNG — the font is commercial, so the lettering ships
      as static artwork in /public; fill + 0.9% opacity are baked into the
      files). Theme-switched here; consumed by .app-surface and .auth-imprint. */
-  --brand-imprint: url("/brand-imprint-light.svg");
+  --brand-imprint: none;
 }
 
 .dark {
@@ -124,7 +124,7 @@
   /* Warm accent, slightly brighter against the near-black surfaces. */
   --cta: oklch(0.78 0.16 67);
   --cta-foreground: oklch(0.16 0.02 60);
-  --brand-imprint: url("/brand-imprint-dark.svg");
+  --brand-imprint: none;
 }
 
 @layer base {
