@@ -37,6 +37,9 @@ COPY ui/src ./src
 
 # Set build-time environment variables (needed for Next.js build)
 ENV NEXT_PUBLIC_NODE_ENV="oss"
+# Billing link in the sidebar (Vokaliza control plane); empty hides it.
+ARG NEXT_PUBLIC_BILLING_URL=""
+ENV NEXT_PUBLIC_BILLING_URL=$NEXT_PUBLIC_BILLING_URL
 ENV NEXT_TELEMETRY_DISABLED="1"
 ENV BACKEND_URL="http://api:8000"
 
