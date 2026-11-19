@@ -29,6 +29,7 @@ from pipecat.frames.frames import (
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.processors.aggregators.llm_context import LLMContext
 from pipecat.services.llm_service import FunctionCallParams
+from pipecat.utils.enums import EndTaskReason
 
 from api.enums import WorkflowRunMode
 from api.services.configuration.masking import mask_key
@@ -2369,6 +2370,90 @@ class TestCustomToolManagerUnit:
             "reason": "provider_error",
             "message": "Transfer provider failed: provider rejected destination",
         }
+
+    @staticmethod
+    def _end_call_engine(*, is_realtime: bool) -> tuple[Mock, list[str]]:
+        """An engine stub that records the order of the end-call steps."""
+        calls: list[str] = []
+        engine = Mock()
+        engine._is_realtime = is_realtime
+        engine._gathered_context = {}
+
+        async def wait_for_bot_silence(**_kwargs):
+            calls.append("wait_for_bot_silence")
+
+        async def end_call_with_reason(call_status, abort_immediately=False):
+            calls.append("end_call_with_reason")
+
+        engine.wait_for_bot_silence = AsyncMock(side_effect=wait_for_bot_silence)
+        engine.end_call_with_reason = AsyncMock(side_effect=end_call_with_reason)
+        return engine, calls
+
+    @staticmethod
+    def _end_call_tool() -> MockToolModel:
+        """An end-call tool with no goodbye message configured."""
+        return MockToolModel(
+            tool_uuid="end-call-uuid",
+            name="End Call",
+            description="End the call",
+            category="end_call",
+            definition={"schema_version": 1, "type": "end_call", "config": {}},
+        )
+
+    @staticmethod
+    def _end_call_params() -> tuple[Mock, list[Any]]:
+        results: list[Any] = []
+
+        async def result_callback(result, properties=None):
+            results.append((result, properties))
+
+        params = Mock()
+        params.arguments = {}
+        params.result_callback = result_callback
+        return params, results
+
+    @pytest.mark.asyncio
+    async def test_end_call_realtime_waits_for_goodbye_then_cancels(self):
+        """A realtime bot's own goodbye plays out, then the call is cancelled.
+
+        Gemini Live holds an EndFrame until turn_complete, which never comes
+        after a run_llm=False tool result, so a graceful end kept the line
+        open for 30 s. The handler must cancel once the bot is quiet.
+        """
+        from api.services.workflow.pipecat_engine_custom_tools import CustomToolManager
+
+        engine, calls = self._end_call_engine(is_realtime=True)
+        manager = CustomToolManager(engine)
+        handler = manager._create_end_call_handler(self._end_call_tool(), "end_call")
+        params, results = self._end_call_params()
+
+        await handler(params)
+
+        assert calls == ["wait_for_bot_silence", "end_call_with_reason"]
+        engine.end_call_with_reason.assert_awaited_once_with(
+            EndTaskReason.END_CALL.value, abort_immediately=True
+        )
+        # The result goes back first and asks for no further LLM response.
+        assert results[0][0] == {"status": "success", "action": "ending_call"}
+        assert results[0][1].run_llm is False
+
+    @pytest.mark.asyncio
+    async def test_end_call_cascade_cancels_without_waiting(self):
+        """A cascade pipeline has no goodbye of its own to wait for."""
+        from api.services.workflow.pipecat_engine_custom_tools import CustomToolManager
+
+        engine, calls = self._end_call_engine(is_realtime=False)
+        manager = CustomToolManager(engine)
+        handler = manager._create_end_call_handler(self._end_call_tool(), "end_call")
+        params, _results = self._end_call_params()
+
+        await handler(params)
+
+        assert calls == ["end_call_with_reason"]
+        engine.wait_for_bot_silence.assert_not_awaited()
+        engine.end_call_with_reason.assert_awaited_once_with(
+            EndTaskReason.END_CALL.value, abort_immediately=True
+        )
 
 
 def _update_llm_context(context, system_message, functions):
