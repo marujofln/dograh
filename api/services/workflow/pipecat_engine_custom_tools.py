@@ -445,8 +445,12 @@ class CustomToolManager:
                     # often after calling this tool: let it finish first.
                     await self._engine.wait_for_bot_silence()
                     logger.info("Ending call after the bot's own goodbye")
+                    # Cancel rather than end: the goodbye has already played,
+                    # and Gemini Live holds an EndFrame until turn_complete,
+                    # which never comes after a run_llm=False tool result, so
+                    # a graceful end left the line open for 30 s.
                     await self._engine.end_call_with_reason(
-                        EndTaskReason.END_CALL.value, abort_immediately=False
+                        EndTaskReason.END_CALL.value, abort_immediately=True
                     )
                 else:
                     # No message - end call immediately
