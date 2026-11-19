@@ -47,41 +47,42 @@
 }
 
 :root {
+  /* Vokaliza palette (black + lime): olive accent on light, lime on dark. */
   --radius: 0.625rem;
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --card: #ffffff;
+  --card-foreground: #111111;
+  --popover: #ffffff;
+  --popover-foreground: #111111;
+  --primary: #4d7c0f;
+  --primary-foreground: #ffffff;
+  --secondary: #efefea;
+  --secondary-foreground: #111111;
+  --muted: #efefea;
+  --muted-foreground: #52524c;
+  --accent: #eef8d9;
+  --accent-foreground: #3f6a0b;
+  --destructive: #b42318;
+  --border: #e4e4dd;
+  --input: #e4e4dd;
+  --ring: #4d7c0f;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  /* Single restrained warm accent — used only on primary CTAs + focus rings. */
-  --cta: oklch(0.72 0.15 65);
-  --cta-foreground: oklch(0.16 0.02 60);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #4d7c0f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef8d9;
+  --sidebar-accent-foreground: #3f6a0b;
+  --sidebar-border: #e4e4dd;
+  --sidebar-ring: #4d7c0f;
+  --background: #f6f6f3;
+  --foreground: #111111;
+  /* Vokaliza brand (docs/marca/manual.html in the vokaliza repository): lime CTA. */
+  --cta: #c6ff3d;
+  --cta-foreground: #111111;
   /* Giant faded "dograh" wordmark (authentic Proxima Nova letterforms traced
      from the brand logo PNG — the font is commercial, so the lettering ships
      as static artwork in /public; fill + 0.9% opacity are baked into the
@@ -90,40 +91,40 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: #0a0a0a;
+  --foreground: #f5f5f0;
+  --card: #141414;
+  --card-foreground: #f5f5f0;
+  --popover: #141414;
+  --popover-foreground: #f5f5f0;
+  --primary: #c6ff3d;
+  --primary-foreground: #111111;
+  --secondary: #1c1c1c;
+  --secondary-foreground: #f5f5f0;
+  --muted: #1c1c1c;
+  --muted-foreground: #a9a9a1;
+  --accent: #1f2a0a;
+  --accent-foreground: #c6ff3d;
+  --destructive: #f97066;
+  --border: #2c2c2c;
+  --input: #2c2c2c;
+  --ring: #c6ff3d;
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  /* Warm accent, slightly brighter against the near-black surfaces. */
-  --cta: oklch(0.78 0.16 67);
-  --cta-foreground: oklch(0.16 0.02 60);
+  --sidebar: #141414;
+  --sidebar-foreground: #f5f5f0;
+  --sidebar-primary: #c6ff3d;
+  --sidebar-primary-foreground: #111111;
+  --sidebar-accent: #1f2a0a;
+  --sidebar-accent-foreground: #c6ff3d;
+  --sidebar-border: #2c2c2c;
+  --sidebar-ring: #c6ff3d;
+  /* Lime CTA on dark surfaces too; the primary turns lime as well. */
+  --cta: #c6ff3d;
+  --cta-foreground: #111111;
   --brand-imprint: none;
 }
 

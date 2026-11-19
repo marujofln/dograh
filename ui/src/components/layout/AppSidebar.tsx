@@ -297,7 +297,7 @@ export function AppSidebar() {
               className="notranslate flex items-center gap-2 px-1"
               translate="no"
             >
-              <BrandLogo className="h-6" />
+              <BrandLogo className="h-8" />
               <span
                 className="notranslate text-xs font-normal text-muted-foreground"
                 translate="no"

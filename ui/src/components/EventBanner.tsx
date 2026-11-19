@@ -239,7 +239,7 @@ function Lockup({ partner }: { partner?: EventBannerEvent["partner"] }) {
   return (
     <>
       <div className="hidden shrink-0 items-center gap-3 xl:flex">
-        <BrandLogo className="h-[20px]" />
+        <BrandLogo className="h-[28px]" />
         {partner && (
           <>
             <span

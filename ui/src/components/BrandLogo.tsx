@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-// Vokaliza wordmark (SVG with the text as outlines, from brand/ in the vokaliza
+// Vokaliza logo: chat icon + wordmark (SVG with the text as outlines, from brand/ in the vokaliza
 // repository), so it looks the same as on vokaliza.com without loading the font.
 // Theme-aware by default: dark text on light surfaces, light text on dark.
 // `inverse` forces the light version on an always-dark surface; `mark` shows

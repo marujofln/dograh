@@ -33,7 +33,7 @@ export function AuthShell({
           <div className="w-full max-w-md space-y-6 rounded-2xl border border-border/60 bg-card p-6 shadow-lg sm:p-8">
             {/* Mobile-only wordmark (brand panel is hidden) */}
             <div className="lg:hidden">
-              <BrandLogo className="h-7" />
+              <BrandLogo className="h-9" />
             </div>
             {children}
           </div>
@@ -50,7 +50,7 @@ export function AuthShell({
         />
 
         <div className="relative">
-          <BrandLogo inverse className="h-8" />
+          <BrandLogo inverse className="h-10" />
         </div>
 
         <div className="relative max-w-md space-y-5">
