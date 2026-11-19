@@ -73,8 +73,8 @@ type SidebarNavSection = {
 
 const TELEPHONY_WARNING_COPY = "Action required";
 
-// Billing lives in our own control-plane service, not in this app. The item
-// only shows up when the deployment points at it.
+// Billing lives in our own control-plane service, not in this app; /statement
+// shows it in a frame. The item only shows up when the deployment points at it.
 const BILLING_URL = process.env.NEXT_PUBLIC_BILLING_URL;
 
 const NAV_SECTIONS: SidebarNavSection[] = [
@@ -152,7 +152,7 @@ const NAV_SECTIONS: SidebarNavSection[] = [
         icon: TrendingUp,
       },
       ...(BILLING_URL
-        ? [{ title: "Billing", url: BILLING_URL, icon: CircleDollarSign }]
+        ? [{ title: "Billing", url: "/statement", icon: CircleDollarSign }]
         : []),
       {
         title: "Reports",
