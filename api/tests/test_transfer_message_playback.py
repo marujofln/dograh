@@ -118,6 +118,9 @@ class RecordingEngine:
     def set_call_disposition(self, disposition):
         self.events.append(("disposition", disposition))
 
+    def silence_bot_output(self):
+        self.events.append("silence_bot_output")
+
     def map_disposition(self, disposition):
         # This stub stands in for an organization with no disposition mapping,
         # so every disposition passes through as itself.

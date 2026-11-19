@@ -1049,6 +1049,11 @@ class CustomToolManager:
                 f"Original: {original_call_sid}, Transfer: {transfer_call_sid}"
             )
 
+            # The caller is about to be bridged to the destination. A realtime
+            # model answers the tool result even with run_llm=False, so its
+            # reply would play over the handover: silence it first.
+            self._engine.silence_bot_output()
+
             # Inform LLM of success and end the call (no further LLM processing needed)
             response_properties = FunctionCallResultProperties(run_llm=False)
             await function_call_params.result_callback(

@@ -235,6 +235,8 @@ class PipecatEngine:
 
         # Controls whether user input should be muted
         self._mute_pipeline: bool = False
+        # Drops bot output once an answered transfer hands the caller over
+        self._bot_output_silenced: bool = False
         self.answer_supervisor = None
         self._answer_user_aggregator = None
 
@@ -2477,6 +2479,13 @@ class PipecatEngine:
         if not self.owns_generation(visit_id):
             return
         self._current_llm_generation_reference_text += text
+
+    def silence_bot_output(self) -> None:
+        """Drop all further bot audio and text for the rest of the call."""
+        self._bot_output_silenced = True
+
+    def is_bot_output_silenced(self) -> bool:
+        return self._bot_output_silenced
 
     def is_call_disposed(self):
         """Check whether a call has been disposed by the engine"""

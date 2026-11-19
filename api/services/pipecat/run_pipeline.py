@@ -1129,6 +1129,7 @@ async def _run_pipeline_impl(
             AgentGenerationProcessor(
                 generation_started_callback=engine.create_generation_started_callback(),
                 llm_text_frame_callback=engine.handle_llm_text_frame,
+                output_silenced=engine.is_bot_output_silenced,
             ),
             pipeline_metrics_aggregator,
             termination_funnel,
