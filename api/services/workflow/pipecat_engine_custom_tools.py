@@ -440,6 +440,14 @@ class CustomToolManager:
                         EndTaskReason.END_CALL.value,
                         abort_immediately=False,
                     )
+                elif self._engine._is_realtime:
+                    # No message, but a realtime model speaks its own goodbye,
+                    # often after calling this tool: let it finish first.
+                    await self._engine.wait_for_bot_silence()
+                    logger.info("Ending call after the bot's own goodbye")
+                    await self._engine.end_call_with_reason(
+                        EndTaskReason.END_CALL.value, abort_immediately=False
+                    )
                 else:
                     # No message - end call immediately
                     logger.info("Ending call immediately (no goodbye message)")

@@ -1571,6 +1571,34 @@ class PipecatEngine:
             if tag and tag not in call_tags:
                 call_tags.append(tag)
 
+    async def wait_for_bot_silence(
+        self,
+        *,
+        start_grace: float = 1.5,
+        quiet_for: float = 0.6,
+        limit: float = 10.0,
+    ) -> None:
+        """Wait until the bot has finished what it is saying.
+
+        A realtime model often calls the end-call tool before or while it
+        speaks its goodbye, and the audio then arrives after the call is gone.
+        Gives the bot ``start_grace`` seconds to start talking, then returns
+        once it has been quiet for ``quiet_for`` seconds, or after ``limit``.
+        """
+        loop = asyncio.get_running_loop()
+        started = loop.time()
+        quiet_since = None
+        while loop.time() - started < limit:
+            now = loop.time()
+            if self._bot_is_speaking:
+                quiet_since = None
+            else:
+                quiet_since = quiet_since if quiet_since is not None else now
+                if now - started >= start_grace and now - quiet_since >= quiet_for:
+                    return
+            await asyncio.sleep(0.05)
+        logger.warning("Bot still speaking after {}s; ending the call anyway", limit)
+
     async def end_call_with_reason(
         self, call_status: str, abort_immediately: bool = False
     ):
