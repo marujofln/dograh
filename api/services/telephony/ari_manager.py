@@ -46,6 +46,7 @@ from api.services.telephony import ws_auth
 from api.services.telephony.call_transfer_manager import get_call_transfer_manager
 from api.services.telephony.providers.ari import channel_registry
 from api.services.telephony.providers.ari.external_pbx import create_adapter
+from api.services.telephony.providers.ari.media import ARI_MEDIA_FORMAT
 from api.services.telephony.status_processor import (
     StatusCallbackRequest,
     _process_status_update,
@@ -842,7 +843,7 @@ class ARIConnection:
         params = {
             "app": self.stasis_app_name,
             "external_host": self.ws_client_name,
-            "format": "ulaw",
+            "format": ARI_MEDIA_FORMAT,
             "transport": "websocket",
             "encapsulation": "none",
             "connection_type": "client",

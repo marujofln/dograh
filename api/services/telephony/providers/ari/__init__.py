@@ -13,6 +13,7 @@ from api.services.telephony.registry import (
 )
 
 from .config import ARIConfigurationRequest
+from .media import ARI_MEDIA_SAMPLE_RATE
 from .provider import ARIProvider
 from .transport import create_transport
 
@@ -233,7 +234,8 @@ SPEC = ProviderSpec(
     provider_cls=ARIProvider,
     config_loader=_config_loader,
     transport_factory=create_transport,
-    transport_sample_rate=8000,
+    # 8 kHz for ulaw, 16 kHz for slin16 (see media.py).
+    transport_sample_rate=ARI_MEDIA_SAMPLE_RATE,
     config_request_cls=ARIConfigurationRequest,
     ui_metadata=_UI_METADATA,
     # The customer's own Asterisk carries the calls; Dograh only rides it.

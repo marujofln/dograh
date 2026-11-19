@@ -12,6 +12,7 @@ from api.services.pipecat.transport_params import realtime_param_overrides
 from api.services.telephony.factory import load_credentials_for_transport
 
 from .external_pbx import create_adapter
+from .media import ARI_MEDIA_FORMAT
 from .serializers import AsteriskFrameSerializer
 from .strategies import ARIBridgeSwapStrategy, ARIHangupStrategy
 
@@ -54,6 +55,7 @@ async def create_transport(
         params=AsteriskFrameSerializer.InputParams(
             asterisk_sample_rate=audio_config.transport_in_sample_rate,
             sample_rate=audio_config.pipeline_sample_rate,
+            media_format=ARI_MEDIA_FORMAT,
         ),
     )
 
