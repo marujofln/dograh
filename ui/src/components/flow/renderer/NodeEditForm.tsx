@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 
 import type { NodeSpec } from "@/client/types.gen";
+import { KNOWLEDGE_BASE_ENABLED } from "@/config/product";
 
 import { evaluateDisplayOptions } from "./displayOptions";
 import { PropertyInput, type RendererContext } from "./PropertyInput";
@@ -50,6 +51,7 @@ export function NodeEditForm({ spec, values, onChange, context }: NodeEditFormPr
         <div className="grid grid-cols-12 gap-3">
             {spec.properties
                 .filter((p) => evaluateDisplayOptions(p.display_options, values))
+                .filter((p) => KNOWLEDGE_BASE_ENABLED || p.type !== "document_refs")
                 .map((p) => {
                     const columnSpan = getPropertyColumnSpan(p.renderer_options);
                     return (

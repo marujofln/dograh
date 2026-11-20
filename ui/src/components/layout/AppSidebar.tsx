@@ -53,7 +53,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PRODUCT_VERSION } from "@/config/product";
+import { KNOWLEDGE_BASE_ENABLED, PRODUCT_VERSION } from "@/config/product";
 import { useTelephonyConfigWarnings } from "@/context/TelephonyConfigWarningsContext";
 import type { LocalUser } from "@/lib/auth";
 import { useAuth } from "@/lib/auth";
@@ -121,11 +121,9 @@ const NAV_SECTIONS: SidebarNavSection[] = [
         url: "/credentials",
         icon: ShieldCheck,
       },
-      {
-        title: "Files",
-        url: "/files",
-        icon: Database,
-      },
+      ...(KNOWLEDGE_BASE_ENABLED
+        ? [{ title: "Files", url: "/files", icon: Database }]
+        : []),
       {
         title: "Campaigns",
         url: "/campaigns",
