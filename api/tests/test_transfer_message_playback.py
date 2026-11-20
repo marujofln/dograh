@@ -128,6 +128,7 @@ class RecordingEngine:
 
     async def end_call_with_reason(self, call_status, abort_immediately=False):
         self.events.append(("end_call", call_status))
+        self.end_call_abort = abort_immediately
 
     def set_mute_pipeline(self, value):
         return None
@@ -596,5 +597,8 @@ class TestTransferDispositionRace:
 
         assert ("disposition", "transferred_to_support") in engine.events
         assert ("end_call", EndTaskReason.TRANSFER_CALL.value) in engine.events
+        # Cancelled, not ended gracefully: a realtime model would hold the
+        # EndFrame (and the bridge swap) until its turn_complete.
+        assert engine.end_call_abort is True
         assert resolve_config.await_args.kwargs["arguments"] == {}
         params.result_callback.assert_awaited_once()

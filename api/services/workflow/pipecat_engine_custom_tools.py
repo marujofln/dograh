@@ -1075,9 +1075,14 @@ class CustomToolManager:
             if success_disposition:
                 self._engine.set_call_disposition(success_disposition)
 
-            # End pipeline - providers complete bridge swap/conference join as final transfer leg
+            # End pipeline - providers complete bridge swap/conference join as
+            # final transfer leg (the serializers do it on EndFrame and on
+            # CancelFrame alike). Cancel rather than end: bot output is already
+            # silenced, and Gemini Live holds an EndFrame until the model's
+            # turn_complete, so a graceful end kept the caller in silence for
+            # ~30 s before the bridge swap (and callers hung up first).
             await self._engine.end_call_with_reason(
-                EndTaskReason.TRANSFER_CALL.value, abort_immediately=False
+                EndTaskReason.TRANSFER_CALL.value, abort_immediately=True
             )
 
         elif action == "transfer_failed":
